@@ -1,0 +1,60 @@
+<?php
+/**
+ * @file
+ * Code for the Customer feature.
+ */
+
+include_once 'customer.features.inc';
+
+function customer_menu() {
+  $items['customer-listing'] = array(
+    'title' => t('Customer Listing'),
+    'description' => 'List of customers',
+    'page callback' => 'customer_listing',
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+function customer_theme() {
+  return array(
+    'customer' => array(
+      'template' => 'customer',
+      'variables' => array('customer' => NULL, 'content' => NULL),
+    ),
+    'customer_listing' => array(
+      'template' => 'customer_listing',
+      'variables' => array('customers' => array()),
+    ),
+  );
+}
+
+function customer_listing() {
+
+  $output = '';
+  $query = new EntityFieldQuery();
+
+  $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'customer')
+    ->propertyCondition('status', 1);
+
+  $result = $query->execute();
+
+  if (!empty($result['node'])) {
+    $nids = array_keys($result['node']);
+
+    $customers = [];
+
+    foreach ($nids as $nid) {
+      $customer = node_load($nid, NULL, TRUE);
+      $content = field_attach_view('node', $customer, 'full');
+      $customers[] = theme('customer', compact('customer', 'content'));
+    }
+
+    $output = theme('customer_listing', compact('customers'));
+  }
+
+  return $output;
+}
